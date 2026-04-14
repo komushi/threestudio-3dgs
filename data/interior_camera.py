@@ -211,7 +211,10 @@ class InteriorCameraDataModule:
     cfg: InteriorCameraDataModuleConfig
 
     def __init__(self, cfg=None):
-        self.cfg = threestudio.utils.config.parse_structured(InteriorCameraDataModuleConfig, cfg)
+        if cfg is None:
+            self.cfg = InteriorCameraDataModuleConfig()
+        else:
+            self.cfg = threestudio.utils.config.parse_structured(InteriorCameraDataModuleConfig, cfg)
 
     def setup(self, stage=None):
         if stage in [None, "fit"]:
