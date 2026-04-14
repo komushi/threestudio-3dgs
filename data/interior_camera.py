@@ -14,6 +14,7 @@ from typing import Any, Tuple, List
 import threestudio
 import torch
 import torch.nn.functional as F
+import pytorch_lightning as pl
 from torch.utils.data import DataLoader
 
 from threestudio.data.uncond import (
@@ -209,10 +210,11 @@ class InteriorCameraDataset(RandomCameraDataset):
 
 
 @threestudio.register("interior-camera-datamodule")
-class InteriorCameraDataModule:
+class InteriorCameraDataModule(pl.LightningDataModule):
     cfg: InteriorCameraDataModuleConfig
 
     def __init__(self, cfg=None):
+        super().__init__()
         if cfg is None:
             self.cfg = InteriorCameraDataModuleConfig()
         else:
