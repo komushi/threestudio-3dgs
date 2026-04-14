@@ -28,6 +28,7 @@ from threestudio.utils.ops import (
 
 @dataclass
 class InteriorCameraDataModuleConfig(RandomCameraDataModuleConfig):
+    # Additional fields for interior camera
     # Fixed camera position inside the room (world coordinates, meters).
     # Z-up convention (matches threestudio). Default: typical eye height.
     camera_position: tuple[float, float, float] = (0.0, 0.0, 1.6)
@@ -35,6 +36,9 @@ class InteriorCameraDataModuleConfig(RandomCameraDataModuleConfig):
     # Small jitter around the fixed position, in meters.
     # Set to 0 for strictly single-position (matches D-1 data).
     position_jitter: float = 0.0
+
+    # Also override eval_camera_position for test dataset
+    eval_camera_position: tuple[float, float, float] = (0.0, 0.0, 1.6)
 
 
 class InteriorCameraIterableDataset(RandomCameraIterableDataset):
