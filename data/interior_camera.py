@@ -181,7 +181,10 @@ class InteriorCameraDataset(RandomCameraDataset):
 
         # Rebuild rays
         focal_length = 0.5 * cfg.eval_height / torch.tan(0.5 * self.fovy)
-        directions = self.directions_unit_focal[None, :, :, :].repeat(batch_size, 1, 1, 1)
+        directions_unit_focal = threestudio.utils.ops.get_ray_directions(
+            H=cfg.eval_height, W=cfg.eval_width, focal=1.0
+        )
+        directions = directions_unit_focal[None, :, :, :].repeat(batch_size, 1, 1, 1)
         directions[:, :, :, :2] = (
             directions[:, :, :, :2] / focal_length[:, None, None, None]
         )
