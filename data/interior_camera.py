@@ -85,22 +85,27 @@ class InteriorCameraIterableDataset(RandomCameraIterableDataset):
 
         # OVERRIDE: Look direction is OUTWARD from camera (NOT toward origin)
         # Reuse elevation/azimuth from parent but interpret as outward direction
+        # Y-up convention: elevation from horizontal plane, azimuth around Y axis
         elev = out["elevation"] * math.pi / 180
         az = out["azimuth"] * math.pi / 180
+        # Spherical to cartesian for Y-up: X=horizontal, Y=vertical, Z=depth
         lookat = torch.stack([
-            torch.cos(elev) * torch.cos(az),
-            torch.cos(elev) * torch.sin(az),
-            torch.sin(elev),
+            torch.cos(elev) * torch.sin(az),  # X from azimuth
+            torch.sin(elev),                   # Y from elevation (Y-up)
+            torch.cos(elev) * torch.cos(az),  # Z from azimuth
         ], dim=-1)  # already unit length, pointing outward
 
-        # Compute camera basis: up is +Z (threestudio convention)
-        up = torch.as_tensor([0, 0, 1], dtype=torch.float32, device=out["c2w"].device)[None].expand(batch_size, 3)
-        right = F.normalize(torch.cross(lookat, up), dim=-1)
-        up = F.normalize(torch.cross(right, lookat), dim=-1)
+        # Compute camera basis: up is +Y (GLB/PLY convention)
+        # lookat points in the direction the camera is looking
+        up_vec = torch.as_tensor([0, 1, 0], dtype=torch.float32, device=out["c2w"].device)[None].expand(batch_size, 3)
+        right = F.normalize(torch.cross(lookat, up_vec), dim=-1)  # right = lookat × up
+        up_final = F.normalize(torch.cross(right, lookat), dim=-1)  # up = right × lookat
 
-        # Build c2w matrix
+        # Build c2w matrix: camera-to-world transformation
+        # In camera space: X=right, Y=up, Z=-forward (looking along -Z)
+        # c2w rotation columns are the camera axes expressed in world coordinates
         c2w3x4 = torch.cat(
-            [torch.stack([right, up, -lookat], dim=-1), camera_positions[:, :, None]],
+            [torch.stack([right, up_final, -lookat], dim=-1), camera_positions[:, :, None]],
             dim=-1,
         )
         c2w = torch.cat([c2w3x4, torch.zeros_like(c2w3x4[:, :1])], dim=1)
@@ -118,7 +123,7 @@ class InteriorCameraIterableDataset(RandomCameraIterableDataset):
         # Transform to world space
         directions = (
             directions[..., 0, None] * right[:, None, None, :]
-            + directions[..., 1, None] * up[:, None, None, :]
+            + directions[..., 1, None] * up_final[:, None, None, :]
             - directions[..., 2, None] * lookat[:, None, None, :]
         )
 
@@ -164,19 +169,23 @@ class InteriorCameraDataset(RandomCameraDataset):
             )
 
         # OVERRIDE: Outward look direction from elevation/azimuth
+        # Y-up convention: elevation from horizontal plane, azimuth around Y axis
+        elev = self.elevation * math.pi / 180
+        az = self.azimuth * math.pi / 180
+        # Spherical to cartesian for Y-up
         lookat = torch.stack([
-            torch.cos(self.elevation) * torch.cos(self.azimuth),
-            torch.cos(self.elevation) * torch.sin(self.azimuth),
-            torch.sin(self.elevation),
+            torch.cos(elev) * torch.sin(az),  # X from azimuth
+            torch.sin(elev),                   # Y from elevation (Y-up)
+            torch.cos(elev) * torch.cos(az),  # Z from azimuth
         ], dim=-1)
 
-        up = torch.as_tensor([0, 0, 1], dtype=torch.float32, device=device)[None].expand(batch_size, 3)
-        right = F.normalize(torch.cross(lookat, up), dim=-1)
-        up = F.normalize(torch.cross(right, lookat), dim=-1)
+        up_vec = torch.as_tensor([0, 1, 0], dtype=torch.float32, device=device)[None].expand(batch_size, 3)
+        right = F.normalize(torch.cross(lookat, up_vec), dim=-1)  # right = lookat × up
+        up_final = F.normalize(torch.cross(right, lookat), dim=-1)  # up = right × lookat
 
         # Rebuild c2w
         c2w3x4 = torch.cat(
-            [torch.stack([right, up, -lookat], dim=-1), camera_positions[:, :, None]],
+            [torch.stack([right, up_final, -lookat], dim=-1), camera_positions[:, :, None]],
             dim=-1,
         )
         c2w = torch.cat([c2w3x4, torch.zeros_like(c2w3x4[:, :1])], dim=1)
@@ -194,7 +203,7 @@ class InteriorCameraDataset(RandomCameraDataset):
 
         directions = (
             directions[..., 0, None] * right[:, None, None, :]
-            + directions[..., 1, None] * up[:, None, None, :]
+            + directions[..., 1, None] * up_final[:, None, None, :]
             - directions[..., 2, None] * lookat[:, None, None, :]
         )
 
