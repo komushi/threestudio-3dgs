@@ -14,6 +14,8 @@ from typing import Any, Tuple, List
 import threestudio
 import torch
 import torch.nn.functional as F
+from torch.utils.data import DataLoader
+
 from threestudio.data.uncond import (
     RandomCameraDataModule,
     RandomCameraDataModuleConfig,
@@ -223,3 +225,35 @@ class InteriorCameraDataModule:
             self.val_dataset = InteriorCameraDataset(self.cfg, "val")
         if stage in [None, "test", "predict"]:
             self.test_dataset = InteriorCameraDataset(self.cfg, "test")
+
+    def train_dataloader(self):
+        return DataLoader(
+            self.train_dataset,
+            batch_size=None,
+            collate_fn=self.train_dataset.collate,
+            num_workers=0,
+        )
+
+    def val_dataloader(self):
+        return DataLoader(
+            self.val_dataset,
+            batch_size=1,
+            collate_fn=self.val_dataset.collate,
+            num_workers=0,
+        )
+
+    def test_dataloader(self):
+        return DataLoader(
+            self.test_dataset,
+            batch_size=1,
+            collate_fn=self.test_dataset.collate,
+            num_workers=0,
+        )
+
+    def predict_dataloader(self):
+        return DataLoader(
+            self.test_dataset,
+            batch_size=1,
+            collate_fn=self.test_dataset.collate,
+            num_workers=0,
+        )
