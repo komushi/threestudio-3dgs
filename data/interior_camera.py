@@ -27,17 +27,38 @@ from threestudio.utils.ops import (
 
 
 @dataclass
-class InteriorCameraDataModuleConfig(RandomCameraDataModuleConfig):
-    # Additional fields for interior camera
-    # Fixed camera position inside the room (world coordinates, meters).
-    # Z-up convention (matches threestudio). Default: typical eye height.
+class InteriorCameraDataModuleConfig:
+    # Inherit all fields from RandomCameraDataModuleConfig by repetition
+    # OmegaConf doesn't handle dataclass inheritance well
+    height: Any = 64
+    width: Any = 64
+    batch_size: Any = 1
+    resolution_milestones: List[int] = field(default_factory=lambda: [])
+    eval_height: int = 512
+    eval_width: int = 512
+    eval_batch_size: int = 1
+    n_val_views: int = 1
+    n_test_views: int = 120
+    elevation_range: Tuple[float, float] = (-60, 60)  # Modified for interior
+    azimuth_range: Tuple[float, float] = (-180, 180)
+    camera_distance_range: Tuple[float, float] = (1, 1.5)  # Not used but required
+    fovy_range: Tuple[float, float] = (40, 70)
+    camera_perturb: float = 0.1
+    center_perturb: float = 0.2
+    up_perturb: float = 0.02
+    light_position_perturb: float = 1.0
+    light_distance_range: Tuple[float, float] = (0.8, 1.5)
+    eval_elevation_deg: float = 15.0
+    eval_camera_distance: float = 1.5
+    eval_fovy_deg: float = 70.0
+    light_sample_strategy: str = "dreamfusion"
+    batch_uniform_azimuth: bool = True
+    progressive_until: int = 0
+    rays_d_normalize: bool = True
+
+    # Interior camera specific fields
     camera_position: tuple[float, float, float] = (0.0, 0.0, 1.6)
-
-    # Small jitter around the fixed position, in meters.
-    # Set to 0 for strictly single-position (matches D-1 data).
     position_jitter: float = 0.0
-
-    # Also override eval_camera_position for test dataset
     eval_camera_position: tuple[float, float, float] = (0.0, 0.0, 1.6)
 
 
