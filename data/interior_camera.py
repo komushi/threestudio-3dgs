@@ -8,7 +8,8 @@ See design/D-2c_threestudio_interior_camera.md for full specification.
 """
 
 import math
-from dataclasses import dataclass
+from dataclasses import dataclass, field
+from typing import Any, Tuple, List
 
 import threestudio
 import torch
