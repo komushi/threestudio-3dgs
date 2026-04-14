@@ -14,6 +14,7 @@ else:
 
 
 from .background import gaussian_mvdream_background
+from .data import interior_camera
 from .geometry import exporter, gaussian_base, gaussian_io
 from .material import gaussian_material
 from .renderer import (
