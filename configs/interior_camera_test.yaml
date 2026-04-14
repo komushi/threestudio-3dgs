@@ -11,8 +11,8 @@ seed: 0
 data_type: "interior-camera-datamodule"
 data:
   # Fixed camera position inside the room (world coordinates, meters)
-  # Typical standing eye height near room centroid
-  camera_position: [0.0, 0.84, 0.0]
+  # Z-up convention (matches threestudio). Default: typical eye height.
+  camera_position: [0.0, 0.0, 1.6]
 
   # No jitter for strictly single-position view
   position_jitter: 0.0
@@ -24,10 +24,12 @@ data:
   elevation_range: [-60, 60]
 
   # Standard FOV for interior views
-  fovy_range: [60, 90]
+  fovy_range: [40, 70]
 
-  # Small perturbation for variety
+  # No camera perturbation for clean validation
   camera_perturb: 0.0
+  center_perturb: 0.0
+  up_perturb: 0.0
 
   batch_size: 1
   width: 512
@@ -42,7 +44,8 @@ data:
   n_val_views: 1
   n_test_views: 12
 
-  eval_camera_position: [0.0, 0.84, 0.0]
+  # Eval settings (used by InteriorCameraDataset)
+  eval_camera_position: [0.0, 0.0, 1.6]
   eval_fovy_deg: 70.0
 
   rays_d_normalize: false
