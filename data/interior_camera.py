@@ -89,12 +89,12 @@ class InteriorCameraIterableDataset(RandomCameraIterableDataset):
         az = out["azimuth"] * math.pi / 180
         lookat = torch.stack([
             torch.cos(elev) * torch.cos(az),
+            torch.sin(elev),  # Y is up (GLB/PLY convention)
             torch.cos(elev) * torch.sin(az),
-            torch.sin(elev),
         ], dim=-1)  # already unit length, pointing outward
 
-        # Compute camera basis: up is +Z (threestudio convention)
-        up = torch.as_tensor([0, 0, 1], dtype=torch.float32, device=out["c2w"].device)[None].expand(batch_size, 3)
+        # Compute camera basis: up is +Y (GLB/PLY convention)
+        up = torch.as_tensor([0, 1, 0], dtype=torch.float32, device=out["c2w"].device)[None].expand(batch_size, 3)
         right = F.normalize(torch.cross(lookat, up), dim=-1)
         up = F.normalize(torch.cross(right, lookat), dim=-1)
 
@@ -164,13 +164,14 @@ class InteriorCameraDataset(RandomCameraDataset):
             )
 
         # OVERRIDE: Outward look direction from elevation/azimuth
+        # Y is up (GLB/PLY convention)
         lookat = torch.stack([
             torch.cos(self.elevation) * torch.cos(self.azimuth),
+            torch.sin(self.elevation),  # Y is up
             torch.cos(self.elevation) * torch.sin(self.azimuth),
-            torch.sin(self.elevation),
         ], dim=-1)
 
-        up = torch.as_tensor([0, 0, 1], dtype=torch.float32, device=device)[None].expand(batch_size, 3)
+        up = torch.as_tensor([0, 1, 0], dtype=torch.float32, device=device)[None].expand(batch_size, 3)
         right = F.normalize(torch.cross(lookat, up), dim=-1)
         up = F.normalize(torch.cross(right, lookat), dim=-1)
 
