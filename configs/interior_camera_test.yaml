@@ -11,8 +11,8 @@ seed: 0
 data_type: "interior-camera-datamodule"
 data:
   # Fixed camera position inside the room (world coordinates, meters)
-  # Z-up convention (matches threestudio). Default: typical eye height.
-  camera_position: [0.0, 0.0, 1.6]
+  # NOTE: PLY is Y-up (from GLB), so camera height is along Y axis
+  camera_position: [0.0, 1.6, 0.0]
 
   # No jitter for strictly single-position view
   position_jitter: 0.0
@@ -45,7 +45,7 @@ data:
   n_test_views: 12
 
   # Eval settings (used by InteriorCameraDataset)
-  eval_camera_position: [0.0, 0.0, 1.6]
+  eval_camera_position: [0.0, 1.6, 0.0]
   eval_fovy_deg: 70.0
 
   rays_d_normalize: false
