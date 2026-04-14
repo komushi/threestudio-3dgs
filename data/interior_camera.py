@@ -204,11 +204,10 @@ class InteriorCameraDataset(RandomCameraDataset):
 
 
 @threestudio.register("interior-camera-datamodule")
-class InteriorCameraDataModule(RandomCameraDataModule):
+class InteriorCameraDataModule:
     cfg: InteriorCameraDataModuleConfig
 
     def __init__(self, cfg=None):
-        super().__init__(cfg)
         self.cfg = threestudio.utils.config.parse_structured(InteriorCameraDataModuleConfig, cfg)
 
     def setup(self, stage=None):
