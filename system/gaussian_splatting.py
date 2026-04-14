@@ -27,11 +27,20 @@ class GaussianSplatting(BaseLift3DSystem):
         super().configure()
         self.automatic_optimization = False
 
-        self.guidance = threestudio.find(self.cfg.guidance_type)(self.cfg.guidance)
-        self.prompt_processor = threestudio.find(self.cfg.prompt_processor_type)(
-            self.cfg.prompt_processor
-        )
-        self.prompt_utils = self.prompt_processor()
+        # Guidance and prompt processor are optional (for render-only tests)
+        if self.cfg.guidance_type and self.cfg.guidance_type != "":
+            self.guidance = threestudio.find(self.cfg.guidance_type)(self.cfg.guidance)
+        else:
+            self.guidance = None
+
+        if self.cfg.prompt_processor_type and self.cfg.prompt_processor_type != "":
+            self.prompt_processor = threestudio.find(self.cfg.prompt_processor_type)(
+                self.cfg.prompt_processor
+            )
+            self.prompt_utils = self.prompt_processor()
+        else:
+            self.prompt_processor = None
+            self.prompt_utils = None
 
     def configure_optimizers(self):
         optim = self.geometry.optimizer

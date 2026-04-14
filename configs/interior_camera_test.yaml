@@ -95,15 +95,12 @@ system:
   background_type: "solid-color-background"
 
   # Prompt processor not used for render-only test
-  prompt_processor_type: "dummy-prompt-processor"
-  prompt_processor:
-    pretrained_model_name_or_path: ""
-    prompt: ""
+  prompt_processor_type: ""
+  prompt_processor: {}
 
   # No guidance for render-only test
-  guidance_type: "dummy-guidance"
-  guidance:
-    pretrained_model_name_or_path: ""
+  guidance_type: ""
+  guidance: {}
 
   exporter_type: "gaussian-mesh-exporter"
 
