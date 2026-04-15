@@ -9,6 +9,7 @@ Uses Y-up coordinate system to match interior_camera.py.
 
 import threestudio
 import torch
+from dataclasses import dataclass
 from threestudio.systems.base import BaseLift3DSystem
 from threestudio.utils.typing import *
 from pathlib import Path
@@ -20,6 +21,12 @@ from ..data.gt_constraint_sampler import GTConstraintSampler
 @threestudio.register("gt-constraint-test-system")
 class GTConstraintTestSystem(BaseLift3DSystem):
     """Minimal system: render, sample GT, save mosaic. No SDS, no prompt, no guidance."""
+
+    @dataclass
+    class Config(BaseLift3DSystem.Config):
+        gt_dir: str = ""
+
+    cfg: Config
 
     def configure(self):
         super().configure()
