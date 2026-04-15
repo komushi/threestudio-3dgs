@@ -4,6 +4,8 @@ GT Constraint Sampler for Step 1.5 (Approach D).
 Loads equirectangular constraint maps from D-0a output and samples them at
 arbitrary outbound camera directions. Used for geometric-alignment testing
 between Blender GT and 3DGS renders.
+
+Uses Y-up coordinate system to match interior_camera.py (commit 2ff886c).
 """
 
 import torch
@@ -16,7 +18,7 @@ from typing import Dict, Optional
 
 class GTConstraintSampler:
     """Load the 4 equirect constraint maps from a D-0a output directory and
-    sample them at arbitrary outbound camera directions."""
+    sample them at arbitrary outbound camera directions (Y-up convention)."""
 
     def __init__(self, gt_dir: str, device: str = "cuda"):
         """
@@ -58,9 +60,9 @@ class GTConstraintSampler:
             scale=1.0 / 255.0,  # binary
         )
 
-        # Apply Blender -> threestudio azimuth-origin correction (once, at load)
+        # Apply Blender -> threestudio azimuth-origin correction (once, at load).
         # +90 deg in azimuth = roll equirect by width/4
-        # This converts from Blender's +Y azimuth origin to threestudio's +X origin
+        # This converts from Blender's azimuth origin to threestudio's convention
         for name in ("depth", "normal", "semantic", "edge"):
             t = getattr(self, name)
             setattr(
@@ -70,7 +72,6 @@ class GTConstraintSampler:
         # Store dimensions for validation
         self.H = self.depth.shape[1]
         self.W = self.depth.shape[2]
-
         self._device = device
 
     @staticmethod
@@ -107,7 +108,7 @@ class GTConstraintSampler:
         """Sample a constraint signal at given ray directions.
 
         Args:
-            rays_d: (B, H, W, 3) unit vectors in threestudio world frame (Z-up)
+            rays_d: (B, H, W, 3) unit vectors in threestudio world frame (Y-up)
             signal: One of "depth", "normal", "semantic", "edge"
 
         Returns:
@@ -116,14 +117,16 @@ class GTConstraintSampler:
         t = getattr(self, signal)  # (C, H_eq, W_eq)
         B, H, W, _ = rays_d.shape
 
-        # Equirect (u, v) from direction
-        # theta = azimuth (from +X axis, CCW), phi = elevation
-        theta = torch.atan2(rays_d[..., 1], rays_d[..., 0])  # az in [-pi, pi]
-        phi = torch.asin(rays_d[..., 2].clamp(-1.0, 1.0))  # el in [-pi/2, pi/2]
+        # Equirect (u, v) from direction - Y-up convention
+        # Matches interior_camera.py's lookat formula:
+        #   lookat = [cos(el)*sin(az), sin(el), cos(el)*cos(az)]
+        # Inverse: az = atan2(x, z), el = asin(y)
+        theta = torch.atan2(rays_d[..., 0], rays_d[..., 2])  # azimuth in XZ plane
+        phi = torch.asin(rays_d[..., 1].clamp(-1.0, 1.0))     # elevation from Y axis
 
         # Normalize to [0, 1]
         u = theta / (2 * torch.pi) + 0.5  # [0, 1]
-        v = 0.5 - phi / torch.pi  # [0, 1]
+        v = 0.5 - phi / torch.pi           # [0, 1]
 
         # grid_sample expects grid in [-1, 1]
         grid = torch.stack([u * 2 - 1, v * 2 - 1], dim=-1)  # (B, H, W, 2)
@@ -143,7 +146,7 @@ class GTConstraintSampler:
         """Sample all constraint signals at given ray directions.
 
         Args:
-            rays_d: (B, H, W, 3) unit vectors in threestudio world frame
+            rays_d: (B, H, W, 3) unit vectors in threestudio world frame (Y-up)
 
         Returns:
             Dict with keys: "depth", "normal", "semantic", "edge"

@@ -3,6 +3,8 @@ GT Constraint Test System for Step 1.5 (Approach D).
 
 Minimal system that renders 3DGS and samples GT constraint maps at the same
 camera poses, saving 4-panel mosaics for visual alignment verification.
+
+Uses Y-up coordinate system to match interior_camera.py.
 """
 
 import threestudio
