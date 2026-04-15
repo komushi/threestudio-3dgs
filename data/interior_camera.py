@@ -4,7 +4,7 @@ Interior camera data module for threestudio-3dgs (Step 1 - GATING).
 Provides outward-looking cameras positioned inside a room, for interior scene
 rendering. This is the inverse topology of the default object-centric cameras.
 
-See design/D-2c_threestudio_interior_camera.md for full specification.
+See design/D-step1_interior_camera.md for full specification.
 """
 
 import math

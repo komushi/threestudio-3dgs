@@ -14,7 +14,7 @@ else:
 
 
 from .background import gaussian_mvdream_background
-from .data import interior_camera
+from .data import interior_camera, gt_constraint_sampler
 from .geometry import exporter, gaussian_base, gaussian_io
 from .material import gaussian_material
 from .renderer import (
@@ -23,5 +23,10 @@ from .renderer import (
     diff_gaussian_rasterizer_background,
     diff_gaussian_rasterizer_shading,
 )
-from .system import gaussian_mvdream, gaussian_splatting, gaussian_zero123
+from .system import (
+    gaussian_mvdream,
+    gaussian_splatting,
+    gaussian_zero123,
+    gt_constraint_test_system,
+)
 from .system import guidance_dummy
