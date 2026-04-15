@@ -61,9 +61,10 @@ class InteriorCameraDataModuleConfig:
     rays_d_normalize: bool = True
 
     # Interior camera specific fields
-    camera_position: tuple[float, float, float] = (0.0, 0.0, 1.6)
+    # Y-up convention (matches GLB/PLY from Blender): Y is vertical
+    camera_position: tuple[float, float, float] = (0.0, 1.6, 0.0)
     position_jitter: float = 0.0
-    eval_camera_position: tuple[float, float, float] = (0.0, 0.0, 1.6)
+    eval_camera_position: tuple[float, float, float] = (0.0, 1.6, 0.0)
 
 
 class InteriorCameraIterableDataset(RandomCameraIterableDataset):
