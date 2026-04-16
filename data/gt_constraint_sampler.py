@@ -113,8 +113,13 @@ class GTConstraintSampler:
             Tensor of shape (C, H, W)
         """
         if path.suffix.lower() == ".exr":
-            import imageio
-            img = np.array(imageio.v3.imread(str(path))).astype(np.float32)
+            # Use OpenCV for EXR (single-channel depth) - more reliable than imageio
+            import cv2
+            img = cv2.imread(str(path), cv2.IMREAD_UNCHANGED).astype(np.float32)
+            if img.ndim == 2:
+                img = img  # Keep as (H, W) for single channel
+            else:
+                img = img[..., 0]  # Extract single channel if multi-channel
         else:
             img = np.asarray(Image.open(path))
 
