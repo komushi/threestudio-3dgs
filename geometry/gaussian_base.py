@@ -256,6 +256,7 @@ class GaussianBaseModel(BaseGeometry, GaussianIO):
         if self.cfg.pred_normal:
             self._normal = torch.empty(0)
         self.optimizer = None
+        self.color_clip = self.cfg.color_clip  # Initialize for get_features()
         self.setup_functions()
 
         if self.cfg.geometry_convert_from.startswith("shap-e:"):
