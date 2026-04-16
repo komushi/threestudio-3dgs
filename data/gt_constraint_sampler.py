@@ -124,12 +124,11 @@ class GTConstraintSampler:
             # Use OpenEXR package for EXR loading - handles single-channel EXR correctly
             # Install on supermicro: pip install OpenEXR
             import OpenEXR
-            from Imath import ChannelType
             exr_file = OpenEXR.InputFile(str(path))
             header = exr_file.header
             w, h = header['dataWindow'].max.x + 1, header['dataWindow'].max.y + 1
             # Read the first channel (R for grayscale depth)
-            data = exr_file.channel('R', ChannelType.FLOAT)
+            data = exr_file.channel('R')
             img = np.frombuffer(data, dtype=np.float32).reshape(h, w)
         else:
             img = np.asarray(Image.open(path))
