@@ -125,10 +125,11 @@ class GTConstraintSampler:
             # Install on supermicro: pip install OpenEXR
             import OpenEXR
             exr_file = OpenEXR.InputFile(str(path))
-            header = exr_file.header
-            w, h = header.dataWindow.max.x + 1, header.dataWindow.max.y + 1
-            # Read the first channel (R for grayscale depth)
-            data = exr_file.channel('R')
+            header = exr_file.header()  # header() returns a dict
+            dw = header["dataWindow"]
+            w, h = dw.max.x + 1, dw.max.y + 1
+            # Read the depth channel - Blender names single-channel Z pass as 'V'
+            data = exr_file.channel('V')
             img = np.frombuffer(data, dtype=np.float32).reshape(h, w)
         else:
             img = np.asarray(Image.open(path))
