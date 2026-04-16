@@ -115,7 +115,7 @@ class DiffGaussian(Rasterizer, GaussianBatchRenderer):
         shs = None
         colors_precomp = None
         if override_color is None:
-            shs = pc.get_features
+            shs = pc.get_features()
         else:
             colors_precomp = override_color
 
