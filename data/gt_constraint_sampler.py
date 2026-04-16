@@ -38,13 +38,10 @@ class GTConstraintSampler:
         # depth/normal filenames, so resolve via glob.
         depth_path = self._resolve(gt_dir, "depth_equirect_metric")
         # Scale depends on format:
-        #   .tif  → uint16 [0, 65535] → 10.0 / 65535.0
-        #   .exr  → float  [0, 1]     → 10.0  (legacy; requires cv2 EXR support)
+        #   .exr  → float  [0, 1]     → 10.0          (OpenEXR pkg, channel 'V')
         #   .png  → uint8  [0, 255]   → 10.0 / 255.0  (legacy 8-bit)
         _sfx = depth_path.suffix.lower()
-        if _sfx in (".tif", ".tiff"):
-            depth_scale = 10.0 / 65535.0
-        elif _sfx == ".exr":
+        if _sfx == ".exr":
             depth_scale = 10.0
         else:
             depth_scale = 10.0 / 255.0
@@ -90,18 +87,18 @@ class GTConstraintSampler:
 
     @staticmethod
     def _resolve(gt_dir: Path, stem: str) -> Path:
-        # Preference order: .tif (16-bit, no special libs) → .exr (legacy) → .png (8-bit legacy).
-        # Also handles Blender's frame-index suffix (e.g., depth_equirect_metric0000.tif).
-        for ext in (".tif", ".tiff", ".exr", ".png"):
+        # Preference order: .exr (16-bit, OpenEXR pkg) → .png (8-bit legacy).
+        # Also handles Blender's frame-index suffix (e.g., depth_equirect_metric0000.exr).
+        for ext in (".exr", ".png"):
             exact = gt_dir / f"{stem}{ext}"
             if exact.exists():
                 return exact
-        for ext in (".tif", ".tiff", ".exr", ".png"):
+        for ext in (".exr", ".png"):
             matches = sorted(gt_dir.glob(f"{stem}*{ext}"))
             if matches:
                 return matches[0]
         raise FileNotFoundError(
-            f"No equirect file matching '{stem}.(tif|exr|png)' in {gt_dir}"
+            f"No equirect file matching '{stem}.(exr|png)' in {gt_dir}"
         )
 
     @staticmethod

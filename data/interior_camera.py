@@ -202,6 +202,10 @@ class InteriorCameraDataset(RandomCameraDataset):
             directions[:, :, :, :2] / focal_length[:, None, None, None]
         )
 
+        # Flip Y component of image-space directions to match rasterizer convention
+        # (image rows increase from top to bottom, not bottom to top)
+        directions[:, :, :, 1] = -directions[:, :, :, 1]
+
         directions = (
             directions[..., 0, None] * right[:, None, None, :]
             + directions[..., 1, None] * up_final[:, None, None, :]
