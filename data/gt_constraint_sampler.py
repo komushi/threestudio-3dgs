@@ -145,8 +145,8 @@ class GTConstraintSampler:
         # grid_sample expects grid in [-1, 1]
         grid = torch.stack([u * 2 - 1, v * 2 - 1], dim=-1)  # (B, H, W, 2)
 
-        # Expand tensor for batch processing
-        eq = t[None].expand(B, -1, -1, -1)  # (B, C, H_eq, W_eq)
+        # Expand tensor for batch processing and move to same device as grid
+        eq = t[None].expand(B, -1, -1, -1).to(grid.device)  # (B, C, H_eq, W_eq)
 
         sampled = F.grid_sample(
             eq, grid, mode="bilinear", padding_mode="reflection", align_corners=False
