@@ -32,13 +32,13 @@ class GTConstraintTestSystem(BaseLift3DSystem):
         super().configure()
         # Initialize GT constraint sampler
         self.sampler = GTConstraintSampler(
-            self.cfg.gt_dir, device=self._device
+            self.cfg.gt_dir, device=self.device
         )
 
     def test_step(self, batch: Dict[str, Any], batch_idx: int):
         """Render 3DGS and sample GT at the same pose, save mosaic with all 4 GT signals."""
-        # Render 3DGS
-        render_out = self.renderer(batch)
+        # Render 3DGS — diff-gaussian-rasterizer uses batch_forward (see GaussianBatchRenderer)
+        render_out = self.renderer.batch_forward(batch)
         rgb = render_out["comp_rgb"]  # (B, H, W, 3)
 
         # Sample GT constraint maps
