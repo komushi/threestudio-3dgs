@@ -121,13 +121,16 @@ class GTConstraintSampler:
             Tensor of shape (C, H, W)
         """
         if path.suffix.lower() == ".exr":
-            # Use tinyexr for EXR loading - handles single-channel EXR correctly
-            # Install on supermicro: pip install tinyexr
-            import tinyexr
-            data, _ = tinyexr.load_exr(str(path))  # Returns (H, W) or (H, W, C) float32
-            img = np.asarray(data)
-            if img.ndim == 3:
-                img = img[:, :, 0]  # Extract single channel if multi-channel
+            # Use OpenEXR package for EXR loading - handles single-channel EXR correctly
+            # Install on supermicro: pip install OpenEXR
+            import OpenEXR
+            from Imath import ChannelType
+            exr_file = OpenEXR.InputFile(str(path))
+            header = exr_file.header
+            w, h = header['dataWindow'].max.x + 1, header['dataWindow'].max.y + 1
+            # Read the first channel (R for grayscale depth)
+            data = exr_file.channel('R', ChannelType.FLOAT)
+            img = np.frombuffer(data, dtype=np.float32).reshape(h, w)
         else:
             img = np.asarray(Image.open(path))
 
