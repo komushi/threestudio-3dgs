@@ -36,11 +36,15 @@ class GTConstraintSampler:
         # Load all four signals as (C, H, W) tensors.
         # Blender's file_slots output appends a frame index (e.g., "0000") to
         # depth/normal filenames, so resolve via glob.
+        depth_path = self._resolve(gt_dir, "depth_equirect_metric")
+        # EXR stores [0,1] float directly; 8-bit PNG stores [0,255] uint8.
+        # Both map to [0, 10m] — scale differs by format.
+        depth_scale = 10.0 if depth_path.suffix.lower() == ".exr" else 10.0 / 255.0
         self.depth = self._load_equirect(
-            self._resolve(gt_dir, "depth_equirect_metric"),
+            depth_path,
             channels=1,
             dtype=torch.float32,
-            scale=10.0 / 65535.0,  # 16-bit PNG -> meters (assuming 10m max range)
+            scale=depth_scale,
         )
         self.normal = self._load_equirect(
             self._resolve(gt_dir, "normal_equirect"),
@@ -78,15 +82,19 @@ class GTConstraintSampler:
 
     @staticmethod
     def _resolve(gt_dir: Path, stem: str) -> Path:
-        exact = gt_dir / f"{stem}.png"
-        if exact.exists():
-            return exact
-        matches = sorted(gt_dir.glob(f"{stem}*.png"))
-        if not matches:
-            raise FileNotFoundError(
-                f"No equirect file matching '{stem}*.png' in {gt_dir}"
-            )
-        return matches[0]
+        # EXR preferred (true 16-bit from Blender OPEN_EXR); PNG fallback (legacy 8-bit).
+        # Also handles Blender's frame-index suffix (e.g., depth_equirect_metric0000.exr).
+        for ext in (".exr", ".png"):
+            exact = gt_dir / f"{stem}{ext}"
+            if exact.exists():
+                return exact
+        for ext in (".exr", ".png"):
+            matches = sorted(gt_dir.glob(f"{stem}*{ext}"))
+            if matches:
+                return matches[0]
+        raise FileNotFoundError(
+            f"No equirect file matching '{stem}.(exr|png)' in {gt_dir}"
+        )
 
     @staticmethod
     def _load_equirect(
@@ -95,7 +103,7 @@ class GTConstraintSampler:
         """Load an equirectangular image and convert to tensor.
 
         Args:
-            path: Path to PNG file
+            path: Path to image file (.exr or .png)
             channels: Number of channels (1 for depth/edge, 3 for normal/semantic)
             dtype: Output tensor dtype
             scale: Scale factor applied after loading
@@ -104,7 +112,11 @@ class GTConstraintSampler:
         Returns:
             Tensor of shape (C, H, W)
         """
-        img = np.asarray(Image.open(path))
+        if path.suffix.lower() == ".exr":
+            import imageio
+            img = np.array(imageio.v3.imread(str(path))).astype(np.float32)
+        else:
+            img = np.asarray(Image.open(path))
 
         if channels == 1 and img.ndim == 3:
             img = img[..., 0]
