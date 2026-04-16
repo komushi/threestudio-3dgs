@@ -92,6 +92,7 @@ class DiffGaussian(Rasterizer, GaussianBatchRenderer):
             sh_degree=pc.active_sh_degree,
             campos=viewpoint_camera.camera_center,
             prefiltered=False,
+            antialiasing=False,
             debug=False,
         )
 

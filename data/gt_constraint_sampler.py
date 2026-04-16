@@ -33,28 +33,30 @@ class GTConstraintSampler:
         """
         gt_dir = Path(gt_dir)
 
-        # Load all four signals as (C, H, W) tensors
+        # Load all four signals as (C, H, W) tensors.
+        # Blender's file_slots output appends a frame index (e.g., "0000") to
+        # depth/normal filenames, so resolve via glob.
         self.depth = self._load_equirect(
-            gt_dir / "depth_equirect_metric.png",
+            self._resolve(gt_dir, "depth_equirect_metric"),
             channels=1,
             dtype=torch.float32,
             scale=10.0 / 65535.0,  # 16-bit PNG -> meters (assuming 10m max range)
         )
         self.normal = self._load_equirect(
-            gt_dir / "normal_equirect.png",
+            self._resolve(gt_dir, "normal_equirect"),
             channels=3,
             dtype=torch.float32,
             scale=1.0 / 127.5,
             shift=-1.0,  # [0, 255] -> [-1, 1]
         )
         self.semantic = self._load_equirect(
-            gt_dir / "semantic_equirect.png",
+            self._resolve(gt_dir, "semantic_equirect"),
             channels=3,
             dtype=torch.float32,
             scale=1.0 / 255.0,  # ADE20K RGB
         )
         self.edge = self._load_equirect(
-            gt_dir / "edge_equirect.png",
+            self._resolve(gt_dir, "edge_equirect"),
             channels=1,
             dtype=torch.float32,
             scale=1.0 / 255.0,  # binary
@@ -73,6 +75,18 @@ class GTConstraintSampler:
         self.H = self.depth.shape[1]
         self.W = self.depth.shape[2]
         self._device = device
+
+    @staticmethod
+    def _resolve(gt_dir: Path, stem: str) -> Path:
+        exact = gt_dir / f"{stem}.png"
+        if exact.exists():
+            return exact
+        matches = sorted(gt_dir.glob(f"{stem}*.png"))
+        if not matches:
+            raise FileNotFoundError(
+                f"No equirect file matching '{stem}*.png' in {gt_dir}"
+            )
+        return matches[0]
 
     @staticmethod
     def _load_equirect(
