@@ -37,9 +37,17 @@ class GTConstraintSampler:
         # Blender's file_slots output appends a frame index (e.g., "0000") to
         # depth/normal filenames, so resolve via glob.
         depth_path = self._resolve(gt_dir, "depth_equirect_metric")
-        # EXR stores [0,1] float directly; 8-bit PNG stores [0,255] uint8.
-        # Both map to [0, 10m] — scale differs by format.
-        depth_scale = 10.0 if depth_path.suffix.lower() == ".exr" else 10.0 / 255.0
+        # Scale depends on format:
+        #   .tif  → uint16 [0, 65535] → 10.0 / 65535.0
+        #   .exr  → float  [0, 1]     → 10.0  (legacy; requires cv2 EXR support)
+        #   .png  → uint8  [0, 255]   → 10.0 / 255.0  (legacy 8-bit)
+        _sfx = depth_path.suffix.lower()
+        if _sfx in (".tif", ".tiff"):
+            depth_scale = 10.0 / 65535.0
+        elif _sfx == ".exr":
+            depth_scale = 10.0
+        else:
+            depth_scale = 10.0 / 255.0
         self.depth = self._load_equirect(
             depth_path,
             channels=1,
@@ -82,18 +90,18 @@ class GTConstraintSampler:
 
     @staticmethod
     def _resolve(gt_dir: Path, stem: str) -> Path:
-        # EXR preferred (true 16-bit from Blender OPEN_EXR); PNG fallback (legacy 8-bit).
-        # Also handles Blender's frame-index suffix (e.g., depth_equirect_metric0000.exr).
-        for ext in (".exr", ".png"):
+        # Preference order: .tif (16-bit, no special libs) → .exr (legacy) → .png (8-bit legacy).
+        # Also handles Blender's frame-index suffix (e.g., depth_equirect_metric0000.tif).
+        for ext in (".tif", ".tiff", ".exr", ".png"):
             exact = gt_dir / f"{stem}{ext}"
             if exact.exists():
                 return exact
-        for ext in (".exr", ".png"):
+        for ext in (".tif", ".tiff", ".exr", ".png"):
             matches = sorted(gt_dir.glob(f"{stem}*{ext}"))
             if matches:
                 return matches[0]
         raise FileNotFoundError(
-            f"No equirect file matching '{stem}.(exr|png)' in {gt_dir}"
+            f"No equirect file matching '{stem}.(tif|exr|png)' in {gt_dir}"
         )
 
     @staticmethod
@@ -113,13 +121,13 @@ class GTConstraintSampler:
             Tensor of shape (C, H, W)
         """
         if path.suffix.lower() == ".exr":
-            # Use OpenCV for EXR (single-channel depth) - more reliable than imageio
-            import cv2
-            img = cv2.imread(str(path), cv2.IMREAD_UNCHANGED).astype(np.float32)
-            if img.ndim == 2:
-                img = img  # Keep as (H, W) for single channel
-            else:
-                img = img[..., 0]  # Extract single channel if multi-channel
+            # Use tinyexr for EXR loading - handles single-channel EXR correctly
+            # Install on supermicro: pip install tinyexr
+            import tinyexr
+            data, _ = tinyexr.load_exr(str(path))  # Returns (H, W) or (H, W, C) float32
+            img = np.asarray(data)
+            if img.ndim == 3:
+                img = img[:, :, 0]  # Extract single channel if multi-channel
         else:
             img = np.asarray(Image.open(path))
 
