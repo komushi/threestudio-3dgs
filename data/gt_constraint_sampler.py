@@ -126,7 +126,7 @@ class GTConstraintSampler:
             import OpenEXR
             exr_file = OpenEXR.InputFile(str(path))
             header = exr_file.header
-            w, h = header['dataWindow'].max.x + 1, header['dataWindow'].max.y + 1
+            w, h = header.dataWindow.max.x + 1, header.dataWindow.max.y + 1
             # Read the first channel (R for grayscale depth)
             data = exr_file.channel('R')
             img = np.frombuffer(data, dtype=np.float32).reshape(h, w)
