@@ -371,7 +371,6 @@ class GaussianBaseModel(BaseGeometry, GaussianIO):
     def get_xyz(self):
         return self._xyz
 
-    @property
     def get_features(self):
         features_dc = self._features_dc
         features_dc = features_dc.clip(-self.color_clip, self.color_clip)
